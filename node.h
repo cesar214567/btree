@@ -1,5 +1,4 @@
 #define DEGREE 5
-#define Max
 #include <iostream>
 using namespace std;
 
