@@ -25,7 +25,7 @@
 
 using namespace std;
 int ORDER;
-enum state_t {OVERFLOW, UNDERFLOW, B_OK, EMPTY, NOT_FOUND,FOUND};
+enum state_t {OVERFLOW, UNDERFLOW, B_OK, BORROW, NOT_FOUND,FOUND ,FIRST_ITEM};
 
 
 template<typename T>
@@ -60,15 +60,29 @@ private:
             insert_into(this->count, value);
         }
         state_t delete_from(const T& value){
-            auto temp=lower_bound(this->data.begin(),this->data.end(),value);
-            if(value==*temp.base()){
-                this->data.erase(temp);
-                data.push_back(value);
-                this->count--;
-                return state_t::FOUND;
-            }else{
-                return state_t::NOT_FOUND;
+            for(int i=0;i<this->count;i++){
+                cout<<data[i]<<" ";
+            }cout<<endl;
+            for(size_t i = 0; i < this->count; i++){
+                if(this->data[i] == value){
+                    for (int j=i+1;j<this->count;j++){
+                        this->data[j-1]=this->data[j];
+                    }
+                    this->count--;
+                    cout<<"i : "<<i<<endl; 
+                    for(int i=0;i<this->count;i++){
+                        cout<<data[i]<<" ";
+                    }cout<<endl;
+                    if(i == 0){
+
+                        return state_t::FIRST_ITEM;
+
+                    }
+                    return state_t::FOUND;
+                }
             }
+            return state_t::NOT_FOUND;
+        
         }
 
         state_t insert(const T& value) {
@@ -92,30 +106,80 @@ private:
 
         state_t delete_index(const T& value){
             size_t index = 0;
+            state_t output;
             while (this->data[index] < value  && index < this->count) {
                 index += 1; 
             }
             if (this->children[index] == nullptr) {
-                // this is a leaf node
-                if(this->delete_from( value)==state_t::NOT_FOUND){
-                    return state_t::NOT_FOUND;
-                }
+                // this is a leaf 
+                output=this->delete_from(value);
             } else {
-                auto state = this->children[index]->delete_index(value);
-                switch(state){
-                    case state_t::EMPTY:{
-                        //merge 
+                cout<<"index: "<< index<<endl;
+                output = this->children[index+1]->delete_index(value);
+                if (output==state_t::FIRST_ITEM)cout<<"FIRST_ITEM"<<endl;
+                if (output==state_t::FOUND)cout<<"FOUND"<<endl;
+                if (output==state_t::NOT_FOUND)cout<<"NOT_FOUND"<<endl;
+
+                 
+                switch(output){
+                    case state_t::FIRST_ITEM:{
+                        cout<<"llego al first item"<<endl;
+                        if(this->children[index+1]->count >= ORDER/2){
+                            this->data[index] = this->children[index+1]->data[0];
+                            output=FOUND;
+                            break;
+                        }else{
+                            cout<<"llego al else"<<endl;
+                            output=BORROW;
+                        }
+                    }
+                    case state_t::BORROW:{
+                        cout<<"llego al borrow"<<endl;
+                        if (index==0 || index==this->count-1){
+                            //wait
+                        }
+                        else{
+                            if (lend(this->children[index-1],this->children[index])){
+                                this->data[index-1] = this->children[index]->data[0];
+                            }else if (lend(this->children[index+1],this->children[index])){
+                                //ACA se updatea.
+                                this->data[index]=this->children[index+1]->data[0];
+                            }else{ 
+                                //merge
+                            }
+                        }
+                        break;
                     }
                     case state_t::NOT_FOUND:{
                         return state_t::NOT_FOUND;
                     }
                 }
-                
             }
-            return this->count ==0 ? EMPTY : B_OK;
+            return this->count == ORDER/2 ? BORROW : output;
 
         }
 
+        bool lend(node * child1, node * to){
+            if(child1->count-1 <= ORDER/2)
+                return false;
+            
+            if(child1->data[0] >= to->data[0]){
+                //this is right child
+                to->data[count]=child1->data[0];
+                to->count++;
+                child1->count--;
+                for (int i=1;i<child1->count;i++ ){
+                    child1->data[i-1]=child1->data[i];
+                }
+            }
+            else{
+                //borrow from left child
+                to->insert_into(0,child1->data[child1->count-1]);
+                child1->count--;
+            } 
+
+            return true;            
+        }
         void split(size_t position) {
             // leaf nodes / index nodes
             node* parent = this; 
