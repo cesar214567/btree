@@ -1,17 +1,3 @@
-// #include "node.cpp"
-// template<typename Index,typename Data>
-// class btree{
-//     string root;
-//     Node<Index,Data> find(Node<Index,Data> root, Index );
-//     public:
-//     void insert(Data data,Index index );
-//     void Delete(Index index);
-//     void update(Data data, Index index);
-
-
-// };
-   
-//#include "node.h" 
 #include <cmath>
 #include <cstdio>
 #include <vector>
@@ -180,25 +166,30 @@ private:
 
             return true;            
         }
+
+        void dfs(){
+            if (this->children[0]==nullptr){
+                //if is leaf
+                for(int i=0;i<this->count;i++){
+                    cout<<this->data[i]<<", ";
+                }
+            }else{
+                for (int i=0;i<this->count;i++){
+                    this->children[i]->dfs();
+                    cout<<this->data[i]<<", ";
+                }
+                this->children[this->count]->dfs();
+            }
+        }
+
         void split(size_t position) {
             // leaf nodes / index nodes
             node* parent = this; 
             node* ptr = this->children[position];
-
-            // TODO: reuse ptr buffer 
-            //node* child1 = new node();
-            node* child2 = new node();
-            /*for (; i < ptr->count / 2; i++) {
-                child1->children[i] = ptr->children[i];
-                child1->data[i] = ptr->data[i];
-                child1->count++;
-            }
-            child1->children[i] = ptr->children[i];
-            */
-           
+            node* child2 = new node();        
             size_t i = ptr->count/2;
             auto mid = i;
-            
+            //"eliminar lo ultimo "
             if(ptr->children[0]) i += 1;
             size_t j = 0;
             for (; i < ptr->count; i++) {
@@ -247,7 +238,6 @@ public:
 
   void print() {
     print(&root, 0);
-    std::cout << "________________________\n";
   }
 
   void print(node *ptr, int level) {
@@ -276,12 +266,6 @@ public:
           }
           temp=temp->next;
       }
-      /*
-      do {
-          for(auto e: temp->data) std::cout<<e<<",";
-          temp = temp->next;
-      }while(temp);
-    */ 
   }
 
     void printLeafs(){
@@ -289,12 +273,16 @@ public:
         while(temp->children[0])
             temp = temp->children[0];
         printRecursive(temp);
-        //std::cout << std::endl;
     }
 
     void delete_index(T index){
         auto state=root.delete_index(index);
     }
+
+    void printInOrder(){
+        root.dfs();
+    }
+
 
 private: 
     //
